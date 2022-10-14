@@ -1,0 +1,5 @@
+target("bubble_sort")
+    add_files("BubbleSort.cpp")
+    set_languages("c++20")
+    set_kind("binary")
+target_end()
