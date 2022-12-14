@@ -82,18 +82,20 @@ class AutoEncoderTrainer:
                  train_data_loader,
                  test_data_loader,
                  device,
-                 verbose=True,
-                 ) -> None:
+                 learning_rata=1e-3) -> None:
+        self.kernel_size = (31, 31)
         self.linear_input_size_of_auto_encoder = UtilityFunctions.shape_after_conv2d(
-            *UtilityFunctions.shape_after_conv2d(*img_size[1:], 7), 3)
+            *UtilityFunctions.shape_after_conv2d(*img_size[1:], 31), 31)
         print("Training Encoder, Decoder with parameter<linear_input_size_of_auto_encoder>=",
               self.linear_input_size_of_auto_encoder)
-        self.encoder = AutoEncoder.ImgEncoder(ndim, self.linear_input_size_of_auto_encoder).to(device)
-        self.decoder = AutoEncoder.ImgDecoder(ndim, self.linear_input_size_of_auto_encoder).to(device)
+        self.encoder = AutoEncoder.ImgEncoder(ndim, self.linear_input_size_of_auto_encoder,
+                                              kernel_size=self.kernel_size, img_channels=img_size[0]).to(device)
+        self.decoder = AutoEncoder.ImgDecoder(ndim, self.linear_input_size_of_auto_encoder,
+                                              img_channels=1, kernel_size=self.kernel_size).to(device)
         self.img_size_: Tuple[int, int, int]
         self.loss_function = loss_function
         opt_param = list(self.encoder.parameters()) + list(self.decoder.parameters())
-        self.optimizer = optimizer(opt_param)
+        self.optimizer = optimizer(opt_param, lr=learning_rata)
         self.epochs = epochs
         self.train_data_loader = train_data_loader
         self.test_data_loader = test_data_loader
@@ -112,7 +114,6 @@ class AutoEncoderTrainer:
         self.encoder.train()
         self.decoder.train()
         for epoch in range(self.epochs):
-            print(f"Train Epoch:{epoch + 1} \n")
             epoch_loss = []
             for img_bat, _ in tqdm(self.train_data_loader):
                 img_bat = img_bat.to(self.device)
@@ -123,7 +124,8 @@ class AutoEncoderTrainer:
                 loss.backward()
                 self.optimizer.step()
                 epoch_loss.append(loss.detach().cpu().numpy())
-            self.train_phase_loss.append(np.mean(epoch_loss))
+            self.train_phase_loss.append((l := np.mean(epoch_loss)))
+            print(f"Epoch {epoch + 1} loss: {l}")
         return self
 
     def test(self):
@@ -132,15 +134,15 @@ class AutoEncoderTrainer:
         self.decoder.eval()
         with torch.no_grad():
             for epoch in range(self.epochs):
-                print(f"Train Epoch:{epoch} \n")
                 ep_loss = []
                 for img_bat, _ in tqdm(self.test_data_loader):
                     img_bat = img_bat.to(self.device)
                     encoded = self.encoder(img_bat)
                     decoded = self.decoder(encoded)
                     loss = self.loss_function(decoded, img_bat)
-                    ep_loss.append(np.mean(loss.detach().cpu().numpy()))
-                self.test_phase_loss.append(np.mean(ep_loss))
+                    ep_loss.append(loss.detach().cpu().numpy())
+                self.test_phase_loss.append((l := np.mean(ep_loss)))
+                print(f"Test Epoch:{epoch + 1}, loss{l}\n")
         return self
 
     def plot_loss(self):
@@ -167,4 +169,3 @@ class AutoEncoderTrainer:
     def load(self, name):
         self.encoder.load_state_dict(torch.load(name + '_encoder.pth'))
         self.decoder.load_state_dict(torch.load(name + '_decoder.pth'))
-        return self

@@ -14,7 +14,7 @@ class ImgEncoder(nn.Module):
         self.convolution_layers = nn.Sequential(
             nn.Conv2d(in_channels=img_channels, out_channels=img_channels, kernel_size=kernel_size[0]),
             nn.ReLU(),
-            nn.Conv2d(in_channels=img_channels, out_channels=img_channels, kernel_size=kernel_size[1]),
+            nn.Conv2d(in_channels=img_channels, out_channels=1, kernel_size=kernel_size[1]),
             nn.ReLU()
         )
         self.flatten = nn.Flatten()
@@ -42,9 +42,9 @@ class ImgDecoder(nn.Module):
         )
         self.unflatten = nn.Unflatten(1, (1, *linear_input_size))
         self.conv2dTrans = nn.Sequential(
-            nn.ConvTranspose2d(1, 1, kernel_size=kernel_size[0]),  # 28 * 28 -> 22 * 22?
+            nn.ConvTranspose2d(in_channels=img_channels, out_channels=1, kernel_size=kernel_size[0]),
             nn.ReLU(),
-            nn.ConvTranspose2d(1, 1, kernel_size=kernel_size[1]),  # 22 * 22 -> 20 * 20
+            nn.ConvTranspose2d(in_channels=1, out_channels=3, kernel_size=kernel_size[1]),
             nn.ReLU()
         )
 
