@@ -9,16 +9,15 @@ IntOrIntTuple = Union[int, Tuple[int, int]]
 
 
 class ImgEncoder(nn.Module):
-    def __init__(self, output_size, linear_input_size: Tuple[int, int]):
+    def __init__(self, output_size, linear_input_size: Tuple[int, int], img_channels: int = 1, kernel_size=(7, 3)):
         super().__init__()
         self.convolution_layers = nn.Sequential(
-            nn.Conv2d(1, 1, kernel_size=7),  # 28 * 28 -> 22 * 22?
+            nn.Conv2d(in_channels=img_channels, out_channels=img_channels, kernel_size=kernel_size[0]),
             nn.ReLU(),
-            nn.Conv2d(1, 1, kernel_size=3),  # 22 * 22 -> 20 * 20
+            nn.Conv2d(in_channels=img_channels, out_channels=img_channels, kernel_size=kernel_size[1]),
             nn.ReLU()
         )
         self.flatten = nn.Flatten()
-        # [(W−K+2P)/S]+1
         self.linear_layers = nn.Sequential(
             nn.Linear(linear_input_size[0] * linear_input_size[1], output_size),
             nn.ReLU()
@@ -35,17 +34,17 @@ class ImgEncoder(nn.Module):
 
 
 class ImgDecoder(nn.Module):
-    def __init__(self, intput_size, linear_input_size: Tuple[int, int]):
+    def __init__(self, input_size, linear_input_size: Tuple[int, int], img_channels: int = 1, kernel_size=(7, 3)):
         super().__init__()
         self.linear_layers = nn.Sequential(
-            nn.Linear(intput_size, linear_input_size[0] * linear_input_size[1]),
+            nn.Linear(input_size, linear_input_size[0] * linear_input_size[1]),
             nn.ReLU()
         )
         self.unflatten = nn.Unflatten(1, (1, *linear_input_size))
         self.conv2dTrans = nn.Sequential(
-            nn.ConvTranspose2d(1, 1, kernel_size=3),  # 28 * 28 -> 22 * 22?
+            nn.ConvTranspose2d(1, 1, kernel_size=kernel_size[0]),  # 28 * 28 -> 22 * 22?
             nn.ReLU(),
-            nn.ConvTranspose2d(1, 1, kernel_size=7),  # 22 * 22 -> 20 * 20
+            nn.ConvTranspose2d(1, 1, kernel_size=kernel_size[1]),  # 22 * 22 -> 20 * 20
             nn.ReLU()
         )
 
@@ -57,5 +56,3 @@ class ImgDecoder(nn.Module):
         for conv in self.conv2dTrans:
             ret = conv(ret)
         return ret
-
-
