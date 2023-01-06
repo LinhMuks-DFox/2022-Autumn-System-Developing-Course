@@ -5,6 +5,8 @@ import torch.nn
 
 
 class LearnModule(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
 
     @abc.abstractmethod
     def to_device(self, device: Union[str, torch.device]):
