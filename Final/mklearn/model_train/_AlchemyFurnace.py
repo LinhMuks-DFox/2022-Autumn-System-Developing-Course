@@ -78,6 +78,9 @@ class AlchemyFurnace:
 
     def __init__(self, metadata: AlchemyParameters):
         self.metadata_ = metadata
+        self.save_path = os.path.join(self.metadata_.save_path, f"{self.metadata_.model_name}.pt")
+        if self.metadata_.verbose:
+            print(f"Alchemy Furnace save path {self.save_path}")
 
         if self.metadata_.verbose:
             print("Initializing Alchemy Furnace...")
@@ -112,10 +115,6 @@ class AlchemyFurnace:
 
         if self.metadata_.after_init is not None:
             self.metadata_.after_init(self)
-
-        self.save_path = os.path.join(self.metadata_.save_path, f"{self.metadata_.model_name}.pt")
-        if self.metadata_.verbose:
-            print(f"Alchemy Furnace save path {self.save_path}")
 
     def move_model_to_device(self, device: Optional[Union[str, torch.device]] = None):
         if device is None and self.metadata_.device is None:
