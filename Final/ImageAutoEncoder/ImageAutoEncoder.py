@@ -94,6 +94,9 @@ class ImageAutoEncoder(LearnModule):
     def parameters(self, recurse: bool = True) -> Iterator[torch.nn.Parameter]:
         return list(self.encoder_.parameters(recurse)) + list(self.decoder_.parameters(recurse))
 
+    def forward(self, sample: torch.Tensor) -> torch.Tensor:
+        return self.decoder_(self.encoder_(sample))
+
 
 __all__ = [
     "ImageAutoEncoder"
