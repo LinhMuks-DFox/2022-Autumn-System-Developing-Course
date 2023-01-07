@@ -10,6 +10,8 @@ MnistFashionデータセットを対象にしたAutoEncoderアーキテクチャ
 
 #### 仕上げ
 
+##### 原理及びアキーテクチャ
+
 ここでは、Auto Encoderは以下のようなアーキテクチャの畳み込みニューラルネットワークを用いて実装される。
 
 ```mermaid
@@ -24,19 +26,6 @@ flowchart TD
 例えば、Aiを使った画像から画像への変換では、写真をマンガに変換する過程で写真から特徴量を抽出する必要がありますが、これを手作業で行うのは非常に面倒です。AutoEncoderを使えば、End
 to Endの画像から画像への変換を完了させることができます。
 
-Encoder:
-
-```mermaid
-flowchart LR
-	Input --> CL1(Convolution Layer1) --> ReLU --> CL2(Convolution Layer2) --> Flatten --> Dense
-```
-
-Decoder:
-
-```mermaid
-flowchart LR
-	Input --> CL1(Convolution Transpose Layer1) --> ReLU --> CL2(Convolution Transpose Layer2) --> UnFlatten --> Dense
-```
 
 原画を特徴量とラベルとして用い、Decoderの出力と原画データとのMSEを損失関数とし、この損失関数を最適化してマッチングEncode、Dencoderを学習する．
 
@@ -46,20 +35,49 @@ flowchart LR
 
 本プログラムに付属する標準トレーニングスクリプトのデータセットと、データセット内の画像の長さと幅を変更することで、カスタマイズされたオートエンコーダをトレーニングすることが可能です。
 
+##### 実装説明
+
+Encoder、Decoderともに、ディープラーニングのアーキテクチャを採用しており、複数層の畳み込みニューラルネットワークを用いてサンプルの特徴を感知し、出力層として完全に結合した層を使用します。 そのため、多層畳み込みネットワークと多層デコンボリューショナルネットワークをどのように構築するかが、このプロジェクトの難しさの一つです。
+
+このプロジェクトでは、[MuxKit-Learn](https://github.com/LinhMuks-DFox/MuxKit-Learn)をSubフレームワークとして使用し、Pytorchをコアとしてを用いて、Encoder, Decoderを構築しています。
+
+Encoder:
+
+```mermaid
+graph LR
+	Conv(Convolution N Times 2Dim) --> LinearOutput --> IR
+```
+
+Decoder:
+```mermaid
+graph LR
+	IR --> LinearOut --> putConv(ConvolutionTranspose N Times 2Dim) 
+```
+
+損失関数として元データとDecoderの出力のMSEを用い、Decoderが元データをできるだけ復元できるようにし、Encoderのデータ特徴抽出能力を訓練する方法である。
+
+訓練フェーズ，テストフェーズ，バリデーションフェーズではMuxKit-Learnに実装した`AlchemyFurnace`というクラスを用います．
+
+*MuxKit-Learn(aka `mklearn`)は自作したラブライブであり，scikit-learnのように便利な深層学習フレームワークである．今回はシステム開発の作品の一部分として使います．*
+
+
+
 #### 使い方
 
 ##### 単に動かしてみる場合：
 
 1. 必要なラブライブをインストール：
 
-    ```bash
-    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
-    
-    pip3 install matplotlib
-    pip3 install numpy
-    pip3 install tqdm
-    ```
+   ```bash
+   pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+   
+   pip3 install matplotlib
+   pip3 install numpy
+   pip3 install tqdm
+   ```
    Cudaを利用したい場合はcudatoolkitもインストール
+
+   **MuxKit-Learnはすでにプロジェクトホルダーに置いてありますので，インストール必要ありません．**
 
 2. Demo訓練スクリプトを実行する
 
@@ -73,11 +91,7 @@ flowchart LR
 ##### カスタマイズAutoEncoderをつくる場合：
 
 0. 前と同じく，必要なラブライブをインストール
-
 1. 自分でDatasetクラスをつくる
 2. 自作したDatasetクラスに対応するDataloaderをつくる
-3. Demoスクリプトに提供した`shape_after_conv2d`関数で，2回畳み込み処理した後の写真の`shape`を計算する：
-    * スクリプトにある`picture_shape = (28, 28)`を自分が用意した写真の`shape`に変換する
-    * たたし，AutoEncoderの畳み込み層は，Kernelサイズを７と３を設置している
 4. 訓練スクリプトのDataset，Dataloaderを自作した物に変換
 5. 訓練スクリプトを実行．
