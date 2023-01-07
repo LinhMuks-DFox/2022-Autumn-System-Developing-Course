@@ -137,6 +137,7 @@ class AlchemyFurnace:
 
         if self.metadata_.on_train is not None:
             self.metadata_.on_train(self)
+        self.metadata_.model.train()
         for epoch in range(self.metadata_.epochs):
             epoch_loss = []
             if self.metadata_.verbose:
@@ -174,7 +175,6 @@ class AlchemyFurnace:
             self.metadata_.after_train(self)
         return self
 
-    @torch.no_grad()
     def score(self, validation_set: Optional[torch.utils.data.DataLoader] = None):
         if self.model_ is None:
             raise AttributeError("model undefined")
@@ -189,7 +189,7 @@ class AlchemyFurnace:
         if score_loader is None:
             raise ValueError(
                 "Score failed. validation_loader in self.metadata_ is none, and validation_set arg is none.")
-
+        self.metadata_.model.train(False)
         with torch.no_grad():
             test_batch_loss = []
             if self.metadata_.verbose:
