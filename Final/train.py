@@ -35,7 +35,7 @@ alchemy_furnace = AlchemyFurnace(parameter := AlchemyParameters(
     model_name="ImageAutoEncoder",
     optimizer=torch.optim.Adam(model.parameters()),
     loss_function=torch.nn.MSELoss(),
-    epochs=30,
+    epochs=20,
     device="cuda:0",
     train_set=demo_dataset,
     train_kernel=train_kernel,
@@ -52,12 +52,16 @@ alchemy_furnace.plot_loss()
 alchemy_furnace.save()
 print("Overall, test loss: ", alchemy_furnace.test_loss_)
 # plots
-fig, axes = plt.subplots(2, 10, figsize=(10, 4))
-for i in range(10):
+fig, axes = plt.subplots(2, 5, figsize=(14, 6))
+for i in range(5):
     r = random.randint(100, 1000)
-    org_data = demo_dataset[i + r][0].unsqueeze(0)
+    org_data, label = demo_dataset[i + r]
+    org_data = org_data.unsqueeze(0).to(torch.device("cuda:0"))
     encoded = model.encoder_(org_data)
     decoded = model.decoder_(encoded)
-    axes[0, i].imshow(encoded.detach().cpu().numpy()[0, 0, :, :])
+    axes[0, i].imshow(org_data.detach().cpu().numpy()[0, 0, :, :])
+    axes[0, i].set_title(f"Original label: {label}")
     axes[1, i].imshow(decoded.detach().cpu().numpy()[0, 0, :, :])
-plt.show()
+    axes[1, i].set_title(f"AutoEncoder Output: {label}")
+
+plt.savefig("ImageAutoEncoder-MNIST-IO-PNG.png", dpi=300)
